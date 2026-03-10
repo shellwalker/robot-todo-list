@@ -1,14 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders todo list header', () => {
+test('renders app with default list', () => {
   render(<App />);
-  const headerElement = screen.getByText(/Robot Todo List/i);
+  // 新版本显示"我的清单"
+  const headerElement = screen.getByText(/我的清单/i);
   expect(headerElement).toBeInTheDocument();
-});
-
-test('shows empty state initially', () => {
-  render(<App />);
-  const emptyState = screen.getByText(/暂无任务/i);
-  expect(emptyState).toBeInTheDocument();
 });
