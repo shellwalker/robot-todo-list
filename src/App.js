@@ -1,258 +1,444 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const TAGS = [
-  { id: 'work', name: '工作', color: '#e3f2fd', textColor: '#1976d2' },
-  { id: 'life', name: '生活', color: '#e8f5e9', textColor: '#388e3c' },
-  { id: 'study', name: '学习', color: '#fff3e0', textColor: '#f57c00' },
+// 预设主题
+const THEMES = [
+  { id: 'purple', name: '梦幻紫', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 'ocean', name: '海洋蓝', bg: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
+  { id: 'sunset', name: '日落橙', bg: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)' },
+  { id: 'forest', name: '森林绿', bg: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
+  { id: 'dark', name: '暗黑模式', bg: 'linear-gradient(135deg, #2c3e50 0%, #000000 100%)' },
+];
+
+// 优先级配置
+const PRIORITIES = [
+  { id: 'low', name: '低', color: '#4caf50', icon: '⬇️' },
+  { id: 'medium', name: '中', color: '#ff9800', icon: '➡️' },
+  { id: 'high', name: '高', color: '#f44336', icon: '⬆️' },
 ];
 
 function App() {
-  const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('robot-todos');
-    return saved ? JSON.parse(saved) : [];
+  // 数据结构：多个清单
+  const [lists, setLists] = useState(() => {
+    const saved = localStorage.getItem('robot-todo-lists');
+    if (saved) return JSON.parse(saved);
+    // 默认创建一个"我的任务"清单
+    return [{
+      id: 'default',
+      name: '我的任务',
+      tasks: [],
+      themeId: 'purple'
+    }];
   });
-  const [inputValue, setInputValue] = useState('');
-  const [selectedTag, setSelectedTag] = useState('work');
-  const [filter, setFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('all');
-  
-  // 编辑状态
-  const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState('');
 
-  // 持久化到 localStorage
+  const [activeListId, setActiveListId] = useState(() => lists[0]?.id || 'default');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddList, setShowAddList] = useState(false);
+  const [newListName, setNewListName] = useState('');
+
+  const activeList = lists.find(l => l.id === activeListId) || lists[0];
+
+  // 持久化
   useEffect(() => {
-    localStorage.setItem('robot-todos', JSON.stringify(todos));
-  }, [todos]);
+    localStorage.setItem('robot-todo-lists', JSON.stringify(lists));
+  }, [lists]);
 
-  // 添加任务
-  const addTodo = () => {
-    if (!inputValue.trim()) return;
-    const newTodo = {
-      id: Date.now(),
-      text: inputValue.trim(),
-      completed: false,
-      tag: selectedTag
+  // 筛选任务
+  const filteredTasks = activeList.tasks.filter(task => {
+    if (searchQuery) {
+      return task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    return true;
+  });
+
+  // 计算进度
+  const completedCount = activeList.tasks.filter(t => t.completed).length;
+  const progress = activeList.tasks.length > 0 ? (completedCount / activeList.tasks.length) * 100 : 0;
+
+  // 添加清单
+  const addList = () => {
+    if (!newListName.trim()) return;
+    const newList = {
+      id: Date.now().toString(),
+      name: newListName.trim(),
+      tasks: [],
+      themeId: 'purple'
     };
-    setTodos([...todos, newTodo]);
-    setInputValue('');
+    setLists([...lists, newList]);
+    setActiveListId(newList.id);
+    setNewListName('');
+    setShowAddList(false);
   };
 
-  // 回车添加任务
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      addTodo();
+  // 删除清单
+  const deleteList = (listId) => {
+    if (lists.length <= 1) return; // 至少保留一个清单
+    const newLists = lists.filter(l => l.id !== listId);
+    setLists(newLists);
+    if (activeListId === listId) {
+      setActiveListId(newLists[0].id);
     }
   };
 
-  // 切换完成状态
-  const toggleTodo = (id) => {
-    if (editingId === id) return; // 编辑时不触发
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+  // 添加任务
+  const addTask = (title, dueDate, priority) => {
+    if (!title.trim()) return;
+    const newTask = {
+      id: Date.now().toString(),
+      title: title.trim(),
+      completed: false,
+      dueDate: dueDate || null,
+      priority: priority || 'medium',
+      steps: [],
+      createdAt: new Date().toISOString()
+    };
+    setLists(lists.map(list =>
+      list.id === activeListId
+        ? { ...list, tasks: [...list.tasks, newTask] }
+        : list
+    ));
+  };
+
+  // 切换任务完成状态
+  const toggleTask = (taskId) => {
+    setLists(lists.map(list =>
+      list.id === activeListId
+        ? {
+            ...list,
+            tasks: list.tasks.map(task =>
+              task.id === taskId ? { ...task, completed: !task.completed } : task
+            )
+          }
+        : list
     ));
   };
 
   // 删除任务
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
-  };
-
-  // 批量删除已完成任务
-  const clearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed));
-  };
-
-  // 开始编辑
-  const startEdit = (todo) => {
-    setEditingId(todo.id);
-    setEditValue(todo.text);
-  };
-
-  // 保存编辑
-  const saveEdit = () => {
-    if (!editValue.trim()) return;
-    setTodos(todos.map(todo =>
-      todo.id === editingId ? { ...todo, text: editValue.trim() } : todo
+  const deleteTask = (taskId) => {
+    setLists(lists.map(list =>
+      list.id === activeListId
+        ? { ...list, tasks: list.tasks.filter(task => task.id !== taskId) }
+        : list
     ));
-    setEditingId(null);
-    setEditValue('');
   };
 
-  // 取消编辑
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditValue('');
+  // 切换步骤完成状态
+  const toggleStep = (taskId, stepId) => {
+    setLists(lists.map(list =>
+      list.id === activeListId
+        ? {
+            ...list,
+            tasks: list.tasks.map(task =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    steps: task.steps.map(step =>
+                      step.id === stepId ? { ...step, completed: !step.completed } : step
+                    )
+                  }
+                : task
+            )
+          }
+        : list
+    ));
   };
 
-  // 编辑框回车保存
-  const handleEditKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
+  // 添加步骤
+  const addStep = (taskId, stepTitle) => {
+    if (!stepTitle.trim()) return;
+    setLists(lists.map(list =>
+      list.id === activeListId
+        ? {
+            ...list,
+            tasks: list.tasks.map(task =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    steps: [...task.steps, { id: Date.now().toString(), title: stepTitle.trim(), completed: false }]
+                  }
+                : task
+            )
+          }
+        : list
+    ));
   };
 
-  // 筛选任务
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'active' && todo.completed) return false;
-    if (filter === 'completed' && !todo.completed) return false;
-    if (tagFilter !== 'all' && todo.tag !== tagFilter) return false;
-    return true;
-  });
+  // 获取当前主题
+  const currentTheme = THEMES.find(t => t.id === activeList.themeId) || THEMES[0];
 
-  // 获取标签信息
-  const getTagInfo = (tagId) => TAGS.find(t => t.id === tagId) || TAGS[0];
+  // 获取优先级信息
+  const getPriorityInfo = (priorityId) => PRIORITIES.find(p => p.id === priorityId) || PRIORITIES[1];
 
-  // 统计
-  const totalCount = todos.length;
-  const completedCount = todos.filter(todo => todo.completed).length;
+  // 格式化日期
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) return '今天';
+    if (date.toDateString() === tomorrow.toDateString()) return '明天';
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  };
+
+  // 检查是否逾期
+  const isOverdue = (dateStr) => {
+    if (!dateStr) return false;
+    return new Date(dateStr) < new Date() && !new Date(dateStr).toDateString().includes(new Date().toDateString());
+  };
 
   return (
-    <div className="App">
-      <div className="todo-container">
-        <h1>🤖 Robot Todo List</h1>
-        
-        {/* 输入区域 */}
-        <div className="input-section">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="添加新任务..."
-            className="todo-input"
-          />
-          <select 
-            value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-            className="tag-select"
-          >
-            {TAGS.map(tag => (
-              <option key={tag.id} value={tag.id}>{tag.name}</option>
-            ))}
-          </select>
-          <button onClick={addTodo} className="add-btn">添加</button>
-        </div>
+    <div className="App" style={{ background: currentTheme.bg }}>
+      <div className="app-container">
+        {/* 侧边栏 - 清单列表 */}
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2>📝 我的清单</h2>
+          </div>
 
-        {/* 状态筛选 */}
-        <div className="filter-section">
-          <button 
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            全部
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
-            onClick={() => setFilter('active')}
-          >
-            未完成
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-            onClick={() => setFilter('completed')}
-          >
-            已完成
-          </button>
-        </div>
-
-        {/* 标签筛选 */}
-        <div className="tag-filter-section">
-          <span className="tag-filter-label">标签筛选:</span>
-          <button 
-            className={`tag-filter-btn ${tagFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setTagFilter('all')}
-          >
-            全部
-          </button>
-          {TAGS.map(tag => (
-            <button 
-              key={tag.id}
-              className={`tag-filter-btn ${tagFilter === tag.id ? 'active' : ''}`}
-              style={tagFilter === tag.id ? { background: tag.color, color: tag.textColor } : {}}
-              onClick={() => setTagFilter(tag.id)}
-            >
-              {tag.name}
-            </button>
-          ))}
-        </div>
-
-        {/* 统计 */}
-        <div className="stats">
-          <span>总计: {totalCount}</span>
-          <span>已完成: {completedCount}</span>
-          {completedCount > 0 && (
-            <button onClick={clearCompleted} className="clear-btn">
-              清空已完成
-            </button>
-          )}
-        </div>
-
-        {/* 任务列表 */}
-        <ul className="todo-list">
-          {filteredTodos.map(todo => {
-            const tagInfo = getTagInfo(todo.tag);
-            const isEditing = editingId === todo.id;
-            
-            return (
-              <li key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
-                {isEditing ? (
-                  <div className="edit-mode">
-                    <input
-                      type="text"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onKeyPress={handleEditKeyPress}
-                      className="edit-input"
-                      autoFocus
-                    />
-                    <button onClick={saveEdit} className="save-btn">保存</button>
-                    <button onClick={cancelEdit} className="cancel-btn">取消</button>
-                  </div>
-                ) : (
-                  <>
-                    <span 
-                      className="todo-text"
-                      onClick={() => toggleTodo(todo.id)}
-                    >
-                      {todo.completed ? '✅' : '⬜'} {todo.text}
-                      <span 
-                        className="todo-tag"
-                        style={{ background: tagInfo.color, color: tagInfo.textColor }}
-                      >
-                        {tagInfo.name}
-                      </span>
-                    </span>
-                    <div className="todo-actions">
-                      <button 
-                        onClick={() => startEdit(todo)}
-                        className="edit-btn"
-                        title="编辑"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        onClick={() => deleteTodo(todo.id)}
-                        className="delete-btn"
-                        title="删除"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </>
+          <div className="lists-container">
+            {lists.map(list => (
+              <div
+                key={list.id}
+                className={`list-item ${activeListId === list.id ? 'active' : ''}`}
+                onClick={() => setActiveListId(list.id)}
+              >
+                <span className="list-icon">📋</span>
+                <span className="list-name">{list.name}</span>
+                <span className="list-count">{list.tasks.filter(t => !t.completed).length}</span>
+                {lists.length > 1 && (
+                  <button
+                    className="delete-list-btn"
+                    onClick={(e) => { e.stopPropagation(); deleteList(list.id); }}
+                  >
+                    ×
+                  </button>
                 )}
-              </li>
-            );
-          })}
-          {filteredTodos.length === 0 && (
-            <li className="empty-state">
-              {filter === 'all' && tagFilter === 'all' ? '暂无任务，快去添加一个吧！' : '没有匹配的任务'}
-            </li>
+              </div>
+            ))}
+          </div>
+
+          {showAddList ? (
+            <div className="add-list-form">
+              <input
+                type="text"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                placeholder="清单名称"
+                autoFocus
+                onKeyPress={(e) => e.key === 'Enter' && addList()}
+              />
+              <div className="add-list-buttons">
+                <button onClick={addList}>添加</button>
+                <button onClick={() => setShowAddList(false)}>取消</button>
+              </div>
+            </div>
+          ) : (
+            <button className="add-list-btn" onClick={() => setShowAddList(true)}>
+              + 新建清单
+            </button>
           )}
-        </ul>
+        </aside>
+
+        {/* 主内容区 */}
+        <main className="main-content">
+          {/* 头部 */}
+          <header className="content-header">
+            <div className="header-top">
+              <h1>{activeList.name}</h1>
+              <div className="theme-selector">
+                {THEMES.map(theme => (
+                  <button
+                    key={theme.id}
+                    className={`theme-btn ${currentTheme.id === theme.id ? 'active' : ''}`}
+                    style={{ background: theme.bg.includes('#2c3e50') ? '#555' : undefined }}
+                    onClick={() => {
+                      setLists(lists.map(l =>
+                        l.id === activeListId ? { ...l, themeId: theme.id } : l
+                      ));
+                    }}
+                    title={theme.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 进度条 */}
+            {activeList.tasks.length > 0 && (
+              <div className="progress-section">
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="progress-text">{completedCount}/{activeList.tasks.length} 已完成</span>
+              </div>
+            )}
+
+            {/* 搜索 */}
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="🔍 搜索任务..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </header>
+
+          {/* 任务列表 */}
+          <div className="tasks-container">
+            {filteredTasks.length === 0 ? (
+              <div className="empty-state">
+                {searchQuery ? '没有找到匹配的任务' : '暂无任务，点击下方添加任务'}
+              </div>
+            ) : (
+              filteredTasks.map(task => {
+                const priorityInfo = getPriorityInfo(task.priority);
+                const completedSteps = task.steps?.filter(s => s.completed).length || 0;
+                const totalSteps = task.steps?.length || 0;
+
+                return (
+                  <div key={task.id} className={`task-card ${task.completed ? 'completed' : ''}`}>
+                    <div className="task-header">
+                      <label className="checkbox-container">
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => toggleTask(task.id)}
+                        />
+                        <span className="checkmark"></span>
+                      </label>
+
+                      <div className="task-content">
+                        <span className="task-title">{task.title}</span>
+                        <div className="task-meta">
+                          {task.dueDate && (
+                            <span className={`due-date ${isOverdue(task.dueDate) && !task.completed ? 'overdue' : ''}`}>
+                              📅 {formatDate(task.dueDate)}
+                            </span>
+                          )}
+                          <span className="priority-badge" style={{ color: priorityInfo.color }}>
+                            {priorityInfo.icon} {priorityInfo.name}
+                          </span>
+                          {totalSteps > 0 && (
+                            <span className="steps-count">
+                              ✓ {completedSteps}/{totalSteps}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button className="delete-btn" onClick={() => deleteTask(task.id)}>🗑️</button>
+                    </div>
+
+                    {/* 步骤列表 */}
+                    {task.steps && task.steps.length > 0 && (
+                      <div className="steps-container">
+                        {task.steps.map(step => (
+                          <label key={step.id} className="step-item">
+                            <input
+                              type="checkbox"
+                              checked={step.completed}
+                              onChange={() => toggleStep(task.id, step.id)}
+                            />
+                            <span className={step.completed ? 'completed' : ''}>{step.title}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 添加步骤 */}
+                    <AddStepForm onAdd={(stepTitle) => addStep(task.id, stepTitle)} />
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* 添加任务 */}
+          <AddTaskForm onAdd={addTask} />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// 添加任务表单组件
+function AddTaskForm({ onAdd }) {
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState('medium');
+
+  const handleSubmit = () => {
+    if (!title.trim()) return;
+    onAdd(title, dueDate, priority);
+    setTitle('');
+    setDueDate('');
+    setPriority('medium');
+  };
+
+  return (
+    <div className="add-task-form">
+      <div className="add-task-input">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="添加任务..."
+          onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+        />
+      </div>
+      <div className="add-task-options">
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="date-input"
+        />
+        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+          {PRIORITIES.map(p => (
+            <option key={p.id} value={p.id}>{p.icon} {p.name}</option>
+          ))}
+        </select>
+        <button onClick={handleSubmit}>添加</button>
+      </div>
+    </div>
+  );
+}
+
+// 添加步骤表单组件
+function AddStepForm({ onAdd }) {
+  const [showInput, setShowInput] = useState(false);
+  const [stepTitle, setStepTitle] = useState('');
+
+  const handleAdd = () => {
+    if (!stepTitle.trim()) return;
+    onAdd(stepTitle);
+    setStepTitle('');
+    setShowInput(false);
+  };
+
+  if (!showInput) {
+    return (
+      <button className="add-step-btn" onClick={() => setShowInput(true)}>
+        + 添加步骤
+      </button>
+    );
+  }
+
+  return (
+    <div className="add-step-form">
+      <input
+        type="text"
+        value={stepTitle}
+        onChange={(e) => setStepTitle(e.target.value)}
+        placeholder="步骤标题..."
+        autoFocus
+        onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+      />
+      <div className="add-step-buttons">
+        <button onClick={handleAdd}>添加</button>
+        <button onClick={() => setShowInput(false)}>取消</button>
       </div>
     </div>
   );
