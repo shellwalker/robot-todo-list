@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState(() => {
+    const saved = localStorage.getItem('robot-todos');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [inputValue, setInputValue] = useState('');
+
+  // 持久化到 localStorage
+  useEffect(() => {
+    localStorage.setItem('robot-todos', JSON.stringify(todos));
+  }, [todos]);
 
   // 添加任务
   const addTodo = () => {
