@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
+const TAGS = [
+  { id: 'work', name: '工作', color: '#e3f2fd', textColor: '#1976d2' },
+  { id: 'life', name: '生活', color: '#e8f5e9', textColor: '#388e3c' },
+  { id: 'study', name: '学习', color: '#fff3e0', textColor: '#f57c00' },
+];
+
 function App() {
   const [todos, setTodos] = useState(() => {
     const saved = localStorage.getItem('robot-todos');
     return saved ? JSON.parse(saved) : [];
   });
   const [inputValue, setInputValue] = useState('');
-  const [priority, setPriority] = useState('medium');
-  const [dueDate, setDueDate] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTag, setSelectedTag] = useState('work');
   const [filter, setFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  
+  // 编辑状态
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
 
@@ -26,14 +33,10 @@ function App() {
       id: Date.now(),
       text: inputValue.trim(),
       completed: false,
-      priority: priority,
-      dueDate: dueDate || null,
-      createdAt: new Date().toISOString()
+      tag: selectedTag
     };
     setTodos([...todos, newTodo]);
     setInputValue('');
-    setPriority('medium');
-    setDueDate('');
   };
 
   // 回车添加任务
@@ -45,6 +48,7 @@ function App() {
 
   // 切换完成状态
   const toggleTodo = (id) => {
+    if (editingId === id) return; // 编辑时不触发
     setTodos(todos.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
@@ -55,6 +59,11 @@ function App() {
     setTodos(todos.filter(todo => todo.id !== id));
   };
 
+  // 批量删除已完成任务
+  const clearCompleted = () => {
+    setTodos(todos.filter(todo => !todo.completed));
+  };
+
   // 开始编辑
   const startEdit = (todo) => {
     setEditingId(todo.id);
@@ -62,10 +71,10 @@ function App() {
   };
 
   // 保存编辑
-  const saveEdit = (id) => {
+  const saveEdit = () => {
     if (!editValue.trim()) return;
     setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, text: editValue.trim() } : todo
+      todo.id === editingId ? { ...todo, text: editValue.trim() } : todo
     ));
     setEditingId(null);
     setEditValue('');
@@ -77,47 +86,29 @@ function App() {
     setEditValue('');
   };
 
-  // 切换优先级
-  const togglePriority = (id) => {
-    const priorities = ['low', 'medium', 'high'];
-    setTodos(todos.map(todo => {
-      if (todo.id === id) {
-        const currentIndex = priorities.indexOf(todo.priority || 'medium');
-        const nextIndex = (currentIndex + 1) % priorities.length;
-        return { ...todo, priority: priorities[nextIndex] };
-      }
-      return todo;
-    }));
+  // 编辑框回车保存
+  const handleEditKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
   };
 
-  // 优先级显示
-  const getPriorityLabel = (p) => {
-    const labels = { high: '🔴 高', medium: '🟡 中', low: '🟢 低' };
-    return labels[p] || labels.medium;
-  };
-
-  // 筛选和搜索
+  // 筛选任务
   const filteredTodos = todos.filter(todo => {
-    const matchesSearch = todo.text.toLowerCase().includes(searchTerm.toLowerCase());
-    if (filter === 'all') return matchesSearch;
-    if (filter === 'active') return matchesSearch && !todo.completed;
-    if (filter === 'completed') return matchesSearch && todo.completed;
-    return matchesSearch;
-  }).sort((a, b) => {
-    // 按优先级排序：高 > 中 > 低
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    return (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1);
+    if (filter === 'active' && todo.completed) return false;
+    if (filter === 'completed' && !todo.completed) return false;
+    if (tagFilter !== 'all' && todo.tag !== tagFilter) return false;
+    return true;
   });
+
+  // 获取标签信息
+  const getTagInfo = (tagId) => TAGS.find(t => t.id === tagId) || TAGS[0];
 
   // 统计
   const totalCount = todos.length;
   const completedCount = todos.filter(todo => todo.completed).length;
-
-  // 检查截止日期
-  const isOverdue = (dueDate) => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date(new Date().toDateString());
-  };
 
   return (
     <div className="App">
@@ -135,121 +126,130 @@ function App() {
             className="todo-input"
           />
           <select 
-            value={priority} 
-            onChange={(e) => setPriority(e.target.value)}
-            className="priority-select"
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="tag-select"
           >
-            <option value="low">🟢 低</option>
-            <option value="medium">🟡 中</option>
-            <option value="high">🔴 高</option>
+            {TAGS.map(tag => (
+              <option key={tag.id} value={tag.id}>{tag.name}</option>
+            ))}
           </select>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="date-input"
-          />
           <button onClick={addTodo} className="add-btn">添加</button>
         </div>
 
-        {/* 搜索和筛选 */}
+        {/* 状态筛选 */}
         <div className="filter-section">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="🔍 搜索任务..."
-            className="search-input"
-          />
-          <div className="filter-buttons">
+          <button 
+            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            全部
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
+            onClick={() => setFilter('active')}
+          >
+            未完成
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            已完成
+          </button>
+        </div>
+
+        {/* 标签筛选 */}
+        <div className="tag-filter-section">
+          <span className="tag-filter-label">标签筛选:</span>
+          <button 
+            className={`tag-filter-btn ${tagFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setTagFilter('all')}
+          >
+            全部
+          </button>
+          {TAGS.map(tag => (
             <button 
-              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
+              key={tag.id}
+              className={`tag-filter-btn ${tagFilter === tag.id ? 'active' : ''}`}
+              style={tagFilter === tag.id ? { background: tag.color, color: tag.textColor } : {}}
+              onClick={() => setTagFilter(tag.id)}
             >
-              全部
+              {tag.name}
             </button>
-            <button 
-              className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
-              onClick={() => setFilter('active')}
-            >
-              进行中
-            </button>
-            <button 
-              className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-              onClick={() => setFilter('completed')}
-            >
-              已完成
-            </button>
-          </div>
+          ))}
         </div>
 
         {/* 统计 */}
         <div className="stats">
           <span>总计: {totalCount}</span>
           <span>已完成: {completedCount}</span>
+          {completedCount > 0 && (
+            <button onClick={clearCompleted} className="clear-btn">
+              清空已完成
+            </button>
+          )}
         </div>
 
         {/* 任务列表 */}
         <ul className="todo-list">
-          {filteredTodos.map(todo => (
-            <li key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
-              {editingId === todo.id ? (
-                <div className="edit-mode">
-                  <input
-                    type="text"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && saveEdit(todo.id)}
-                    className="edit-input"
-                    autoFocus
-                  />
-                  <button onClick={() => saveEdit(todo.id)} className="save-btn">💾</button>
-                  <button onClick={cancelEdit} className="cancel-btn">❌</button>
-                </div>
-              ) : (
-                <>
-                  <div className="todo-main" onClick={() => toggleTodo(todo.id)}>
-                    <span className="todo-text">
+          {filteredTodos.map(todo => {
+            const tagInfo = getTagInfo(todo.tag);
+            const isEditing = editingId === todo.id;
+            
+            return (
+              <li key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+                {isEditing ? (
+                  <div className="edit-mode">
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyPress={handleEditKeyPress}
+                      className="edit-input"
+                      autoFocus
+                    />
+                    <button onClick={saveEdit} className="save-btn">保存</button>
+                    <button onClick={cancelEdit} className="cancel-btn">取消</button>
+                  </div>
+                ) : (
+                  <>
+                    <span 
+                      className="todo-text"
+                      onClick={() => toggleTodo(todo.id)}
+                    >
                       {todo.completed ? '✅' : '⬜'} {todo.text}
-                    </span>
-                    <div className="todo-meta">
                       <span 
-                        className="priority-badge"
-                        onClick={(e) => { e.stopPropagation(); togglePriority(todo.id); }}
-                        title="点击切换优先级"
+                        className="todo-tag"
+                        style={{ background: tagInfo.color, color: tagInfo.textColor }}
                       >
-                        {getPriorityLabel(todo.priority)}
+                        {tagInfo.name}
                       </span>
-                      {todo.dueDate && (
-                        <span className={`due-date ${isOverdue(todo.dueDate) && !todo.completed ? 'overdue' : ''}`}>
-                          📅 {todo.dueDate}
-                        </span>
-                      )}
+                    </span>
+                    <div className="todo-actions">
+                      <button 
+                        onClick={() => startEdit(todo)}
+                        className="edit-btn"
+                        title="编辑"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => deleteTodo(todo.id)}
+                        className="delete-btn"
+                        title="删除"
+                      >
+                        🗑️
+                      </button>
                     </div>
-                  </div>
-                  <div className="todo-actions">
-                    <button 
-                      onClick={() => startEdit(todo)}
-                      className="edit-btn"
-                      title="编辑"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => deleteTodo(todo.id)}
-                      className="delete-btn"
-                      title="删除"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
+                  </>
+                )}
+              </li>
+            );
+          })}
           {filteredTodos.length === 0 && (
             <li className="empty-state">
-              {searchTerm || filter !== 'all' ? '没有匹配的任务' : '暂无任务，快去添加一个吧！'}
+              {filter === 'all' && tagFilter === 'all' ? '暂无任务，快去添加一个吧！' : '没有匹配的任务'}
             </li>
           )}
         </ul>

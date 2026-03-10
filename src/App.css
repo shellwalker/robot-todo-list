@@ -48,7 +48,8 @@ h1 {
 }
 
 .priority-select,
-.date-input {
+.date-input,
+.tag-select {
   padding: 10px 12px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -58,7 +59,8 @@ h1 {
 }
 
 .priority-select:focus,
-.date-input:focus {
+.date-input:focus,
+.tag-select:focus {
   outline: none;
   border-color: #667eea;
 }
@@ -71,44 +73,31 @@ h1 {
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s, transform 0.1s;
 }
 
 .add-btn:hover {
   background: #5568d3;
+  transform: translateY(-2px);
 }
 
-/* 搜索和筛选 */
+.add-btn:active {
+  transform: translateY(0);
+}
+
+/* 筛选按钮 */
 .filter-section {
-  margin-bottom: 16px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.filter-buttons {
   display: flex;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .filter-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: #f0f0f0;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -123,16 +112,77 @@ h1 {
   color: white;
 }
 
+/* 标签筛选 */
+.tag-filter-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tag-filter-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.tag-filter-btn {
+  padding: 6px 12px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter-btn:hover {
+  background: #e0e0e0;
+}
+
+.tag-filter-btn.active {
+  background: #667eea;
+  color: white;
+}
+
+/* 任务标签 */
+.todo-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 /* 统计 */
 .stats {
   display: flex;
   justify-content: space-around;
+  align-items: center;
   padding: 12px;
   background: #f5f5f5;
   border-radius: 8px;
   margin-bottom: 20px;
   font-weight: 500;
   color: #555;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clear-btn {
+  padding: 6px 12px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.clear-btn:hover {
+  background: #f57c00;
 }
 
 /* 任务列表 */
@@ -149,6 +199,33 @@ h1 {
   padding: 14px 16px;
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.2s;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.todo-item.removing {
+  animation: slideOut 0.3s ease forwards;
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
 }
 
 .todo-item:hover {
@@ -170,12 +247,25 @@ h1 {
 .todo-text {
   font-size: 16px;
   color: #333;
-  transition: color 0.2s;
+  transition: color 0.2s, text-decoration 0.2s;
 }
 
 .todo-item.completed .todo-text {
   color: #999;
   text-decoration: line-through;
+  animation: complete 0.3s ease;
+}
+
+@keyframes complete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .todo-meta {
@@ -225,16 +315,12 @@ h1 {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
-}
-
-.edit-btn {
-  background: #90caf9;
-  color: white;
+  transition: background 0.3s, transform 0.1s;
 }
 
 .edit-btn:hover {
   background: #64b5f6;
+  transform: scale(1.1);
 }
 
 .delete-btn {
@@ -244,6 +330,7 @@ h1 {
 
 .delete-btn:hover {
   background: #ee5a5a;
+  transform: scale(1.1);
 }
 
 /* 编辑模式 */
