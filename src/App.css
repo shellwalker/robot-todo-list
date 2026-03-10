@@ -12,7 +12,7 @@
   border-radius: 16px;
   padding: 30px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   margin-top: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
@@ -24,14 +24,17 @@ h1 {
   font-size: 24px;
 }
 
+/* 输入区域 */
 .input-section {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .todo-input {
   flex: 1;
+  min-width: 150px;
   padding: 12px 16px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -40,6 +43,22 @@ h1 {
 }
 
 .todo-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.priority-select,
+.date-input {
+  padding: 10px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.priority-select:focus,
+.date-input:focus {
   outline: none;
   border-color: #667eea;
 }
@@ -59,6 +78,52 @@ h1 {
   background: #5568d3;
 }
 
+/* 搜索和筛选 */
+.filter-section {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #e0e0e0;
+}
+
+.filter-btn.active {
+  background: #667eea;
+  color: white;
+}
+
+/* 统计 */
 .stats {
   display: flex;
   justify-content: space-around;
@@ -70,6 +135,7 @@ h1 {
   color: #555;
 }
 
+/* 任务列表 */
 .todo-list {
   list-style: none;
   padding: 0;
@@ -93,9 +159,15 @@ h1 {
   border-bottom: none;
 }
 
-.todo-text {
+.todo-main {
   flex: 1;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.todo-text {
   font-size: 16px;
   color: #333;
   transition: color 0.2s;
@@ -106,10 +178,49 @@ h1 {
   text-decoration: line-through;
 }
 
+.todo-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.priority-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.priority-badge:hover {
+  background: #e0e0e0;
+}
+
+.due-date {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+}
+
+.due-date.overdue {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+/* 操作按钮 */
+.todo-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+}
+
+.edit-btn,
 .delete-btn {
-  padding: 6px 12px;
-  background: #ff6b6b;
-  color: white;
+  padding: 6px 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -117,7 +228,67 @@ h1 {
   transition: background 0.3s;
 }
 
+.edit-btn {
+  background: #90caf9;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #64b5f6;
+}
+
+.delete-btn {
+  background: #ff6b6b;
+  color: white;
+}
+
 .delete-btn:hover {
+  background: #ee5a5a;
+}
+
+/* 编辑模式 */
+.edit-mode {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.edit-input:focus {
+  outline: none;
+}
+
+.save-btn,
+.cancel-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.save-btn {
+  background: #66bb6a;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #4caf50;
+}
+
+.cancel-btn {
+  background: #ff6b6b;
+  color: white;
+}
+
+.cancel-btn:hover {
   background: #ee5a5a;
 }
 
