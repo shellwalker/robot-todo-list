@@ -63,6 +63,10 @@ function App() {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [showBatchActions, setShowBatchActions] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
@@ -354,6 +358,106 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // 请求通知权限
+  const requestNotificationPermission = async () => {
+    if (typeof Notification === 'undefined') {
+      alert('当前浏览器不支持通知功能');
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === 'granted') {
+      alert('通知权限已开启！');
+    } else if (permission === 'denied') {
+      alert('通知权限被拒绝，请在浏览器设置中手动开启');
+    }
+  };
+
+  // 发送通知
+  const sendNotification = (title, body) => {
+    if (notificationPermission === 'granted') {
+      new Notification(title, { body, icon: '/logo192.png' });
+    }
+  };
+
+  // 检查并发送截止日期提醒
+  const checkDueDateReminders = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    lists.forEach(list => {
+      list.tasks.forEach(task => {
+        if (task.dueDate && !task.completed) {
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+
+          // 今天到期的任务
+          if (dueDate.getTime() === today.getTime()) {
+            sendNotification(
+              '📅 任务今天到期',
+              `"${task.title}" 需要在今天完成`
+            );
+          }
+          // 明天到期的任务
+          else if (dueDate.getTime() === tomorrow.getTime()) {
+            sendNotification(
+              '📅 任务明天到期',
+              `"${task.title}" 明天到期，请提前准备`
+            );
+          }
+        }
+      });
+    });
+  };
+
+  // 检查逾期任务
+  const checkOverdueTasks = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let overdueCount = 0;
+    lists.forEach(list => {
+      list.tasks.forEach(task => {
+        if (task.dueDate && !task.completed) {
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate.getTime() < today.getTime()) {
+            overdueCount++;
+          }
+        }
+      });
+    });
+
+    if (overdueCount > 0) {
+      sendNotification(
+        '⚠️ 有逾期任务',
+        `你有 ${overdueCount} 个任务已逾期，请尽快处理`
+      );
+    }
+  };
+
+  // 初始化通知检查
+  useEffect(() => {
+    if (notificationPermission === 'granted') {
+      // 页面加载时检查一次
+      checkDueDateReminders();
+      checkOverdueTasks();
+
+      // 每小时检查一次
+      const interval = setInterval(
+        () => {
+          checkDueDateReminders();
+          checkOverdueTasks();
+        },
+        60 * 60 * 1000
+      );
+
+      return () => clearInterval(interval);
+    }
+  }, [notificationPermission, lists]);
+
   // 获取当前主题
   const currentTheme =
     THEMES.find(t => t.id === activeList.themeId) || THEMES[0];
@@ -456,6 +560,25 @@ function App() {
           {showSettings && (
             <div className="settings-panel">
               <h3>⚙️ 设置</h3>
+              <div className="settings-section">
+                <h4>🔔 通知设置</h4>
+                <p className="notification-status">
+                  当前状态:{' '}
+                  {notificationPermission === 'granted'
+                    ? '✅ 已开启'
+                    : notificationPermission === 'denied'
+                      ? '❌ 已拒绝'
+                      : '⚪ 未开启'}
+                </p>
+                {notificationPermission !== 'granted' && (
+                  <button onClick={requestNotificationPermission}>
+                    开启通知权限
+                  </button>
+                )}
+                {notificationPermission === 'granted' && (
+                  <button onClick={checkDueDateReminders}>测试通知</button>
+                )}
+              </div>
               <div className="settings-section">
                 <h4>📤 数据导出</h4>
                 <button onClick={exportToJSON}>导出为 JSON</button>
