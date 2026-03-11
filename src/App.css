@@ -1048,34 +1048,3 @@ body {
   opacity: 0.5;
   transform: scale(0.98);
 }
-
-/* 键盘快捷键样式 */
-.shortcuts-list {
-  margin-top: 10px;
-}
-
-.shortcut-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.shortcut-item:last-child {
-  border-bottom: none;
-}
-
-.shortcut-item kbd {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 12px;
-  font-family: monospace;
-}
-
-.shortcut-item span {
-  color: #666;
-  font-size: 13px;
-}
