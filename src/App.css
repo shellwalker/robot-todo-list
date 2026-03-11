@@ -1092,3 +1092,112 @@ body {
   color: #666;
   margin-top: 4px;
 }
+
+/* 深色模式优化 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+  }
+
+  .sidebar {
+    background: #16213e;
+    color: #e0e0e0;
+  }
+
+  .main-content {
+    background: #1a1a2e;
+  }
+
+  .task-card {
+    background: #16213e;
+    color: #e0e0e0;
+  }
+
+  .task-card:hover {
+    background: #1f3460;
+  }
+
+  .add-task-form input,
+  .add-task-form select,
+  .date-input {
+    background: #16213e;
+    color: #e0e0e0;
+    border-color: #333;
+  }
+
+  .search-box input {
+    background: #16213e;
+    color: #e0e0e0;
+    border-color: #333;
+  }
+
+  .list-item {
+    background: transparent;
+  }
+
+  .list-item:hover {
+    background: #1f3460;
+  }
+
+  .list-item.active {
+    background: #667eea;
+    color: white;
+  }
+
+  .settings-panel > div {
+    background: #16213e;
+    color: #e0e0e0;
+  }
+
+  .settings-section h4 {
+    color: #aaa;
+  }
+
+  .settings-section button {
+    background: #667eea;
+    color: white;
+  }
+
+  .settings-section button:hover {
+    background: #5a6fd6;
+  }
+
+  .notification-status {
+    color: #aaa;
+  }
+
+  .tag-item {
+    color: white;
+  }
+
+  .shortcut-item kbd {
+    background: #333;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  .shortcut-item span {
+    color: #aaa;
+  }
+
+  .stat-item {
+    background: #16213e;
+  }
+
+  .stat-value {
+    color: #e0e0e0;
+  }
+
+  .progress-section {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .progress-bar {
+    background: #333;
+  }
+
+  .theme-selector button {
+    border: 2px solid #555;
+  }
+}
