@@ -28,5 +28,7 @@ import App from './App';
 test('renders app with default list', () => {
   render(<App />);
   // 验证标题显示
-  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/我的任务/i);
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+    /我的任务/i
+  );
 });

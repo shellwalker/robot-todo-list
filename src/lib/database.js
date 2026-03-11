@@ -54,11 +54,8 @@ export const updateList = async (id, updates) => {
 /**
  * 删除清单
  */
-export const deleteList = async (id) => {
-  const { error } = await supabase
-    .from('lists')
-    .delete()
-    .eq('id', id);
+export const deleteList = async id => {
+  const { error } = await supabase.from('lists').delete().eq('id', id);
 
   if (error) throw error;
   return true;
@@ -71,7 +68,7 @@ export const deleteList = async (id) => {
 /**
  * 获取指定清单的所有任务
  */
-export const getTasks = async (listId) => {
+export const getTasks = async listId => {
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
@@ -98,16 +95,18 @@ export const getAllTasks = async () => {
 /**
  * 创建任务
  */
-export const createTask = async (task) => {
+export const createTask = async task => {
   const { data, error } = await supabase
     .from('tasks')
-    .insert([{
-      list_id: task.listId,
-      title: task.title,
-      completed: task.completed || false,
-      priority: task.priority || 'medium',
-      due_date: task.dueDate || null,
-    }])
+    .insert([
+      {
+        list_id: task.listId,
+        title: task.title,
+        completed: task.completed || false,
+        priority: task.priority || 'medium',
+        due_date: task.dueDate || null,
+      },
+    ])
     .select()
     .single();
 
@@ -140,11 +139,8 @@ export const toggleTaskComplete = async (id, completed) => {
 /**
  * 删除任务
  */
-export const deleteTask = async (id) => {
-  const { error } = await supabase
-    .from('tasks')
-    .delete()
-    .eq('id', id);
+export const deleteTask = async id => {
+  const { error } = await supabase.from('tasks').delete().eq('id', id);
 
   if (error) throw error;
   return true;
@@ -157,7 +153,7 @@ export const deleteTask = async (id) => {
 /**
  * 获取指定任务的所有步骤
  */
-export const getSteps = async (taskId) => {
+export const getSteps = async taskId => {
   const { data, error } = await supabase
     .from('steps')
     .select('*')
@@ -171,9 +167,9 @@ export const getSteps = async (taskId) => {
 /**
  * 获取多个任务的步骤
  */
-export const getStepsForTasks = async (taskIds) => {
+export const getStepsForTasks = async taskIds => {
   if (!taskIds || taskIds.length === 0) return [];
-  
+
   const { data, error } = await supabase
     .from('steps')
     .select('*')
@@ -190,11 +186,13 @@ export const getStepsForTasks = async (taskIds) => {
 export const createStep = async (taskId, title) => {
   const { data, error } = await supabase
     .from('steps')
-    .insert([{
-      task_id: taskId,
-      title,
-      completed: false,
-    }])
+    .insert([
+      {
+        task_id: taskId,
+        title,
+        completed: false,
+      },
+    ])
     .select()
     .single();
 
@@ -227,11 +225,8 @@ export const toggleStepComplete = async (id, completed) => {
 /**
  * 删除步骤
  */
-export const deleteStep = async (id) => {
-  const { error } = await supabase
-    .from('steps')
-    .delete()
-    .eq('id', id);
+export const deleteStep = async id => {
+  const { error } = await supabase.from('steps').delete().eq('id', id);
 
   if (error) throw error;
   return true;
@@ -245,7 +240,7 @@ export const deleteStep = async (id) => {
  * 删除清单及其所有相关任务和步骤
  * 由于设置了 CASCADE，删除清单会自动删除相关任务和步骤
  */
-export const deleteListWithTasks = async (listId) => {
+export const deleteListWithTasks = async listId => {
   // 先获取所有任务
   const tasks = await getTasks(listId);
   const taskIds = tasks.map(t => t.id);
@@ -256,7 +251,7 @@ export const deleteListWithTasks = async (listId) => {
       .from('steps')
       .delete()
       .in('task_id', taskIds);
-    
+
     if (stepsError) throw stepsError;
   }
 
