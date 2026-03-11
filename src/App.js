@@ -153,7 +153,7 @@ function App() {
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
-  // 持久化
+  // 拖拽处理
   useEffect(() => {
     localStorage.setItem('robot-todo-lists', JSON.stringify(lists));
   }, [lists]);
@@ -225,6 +225,49 @@ function App() {
     }
     return true;
   });
+
+  // 拖拽处理
+  const [draggedTask, setDraggedTask] = useState(null);
+
+  const handleDragStart = e => {
+    e.target.classList.add('dragging');
+    setDraggedTask(e.target);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnd = e => {
+    e.target.classList.remove('dragging');
+    setDraggedTask(null);
+  };
+
+  const handleDrop = e => {
+    e.preventDefault();
+    const droppedTaskId = e.target.closest('.task-card')?.dataset?.taskId;
+    if (!droppedTaskId || !draggedTask) return;
+
+    const draggedId = draggedTask.dataset.taskId;
+    if (draggedId === droppedTaskId) return;
+
+    const taskList = [...activeList.tasks];
+    const fromIndex = taskList.findIndex(t => t.id === draggedId);
+    const toIndex = taskList.findIndex(t => t.id === droppedTaskId);
+
+    if (fromIndex !== -1 && toIndex !== -1) {
+      const [movedTask] = taskList.splice(fromIndex, 1);
+      taskList.splice(toIndex, 0, movedTask);
+      setLists(
+        lists.map(list =>
+          list.id === activeListId ? { ...list, tasks: taskList } : list
+        )
+      );
+    }
+    setDraggedTask(null);
+  };
 
   // 计算进度
   const completedCount = activeList.tasks.filter(t => t.completed).length;
@@ -862,7 +905,11 @@ function App() {
           </header>
 
           {/* 任务列表 */}
-          <div className="tasks-container">
+          <div
+            className="tasks-container"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             {filteredTasks.length === 0 ? (
               <div className="empty-state">
                 {searchQuery
@@ -879,6 +926,10 @@ function App() {
                 return (
                   <div
                     key={task.id}
+                    data-task-id={task.id}
+                    draggable
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                     className={`task-card ${task.completed ? 'completed' : ''} ${selectedTasks.includes(task.id) ? 'selected' : ''}`}
                   >
                     <div className="task-header">
