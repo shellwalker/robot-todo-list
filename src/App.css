@@ -1201,3 +1201,17 @@ body {
     border: 2px solid #555;
   }
 }
+
+/* 依赖样式 */
+.dependency-badge {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.task-card.locked {
+  opacity: 0.6;
+}
+
+.task-card.locked .checkbox-container input:disabled {
+  cursor: not-allowed;
+}
