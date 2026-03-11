@@ -166,7 +166,12 @@ function App() {
     setLists(
       lists.map(list =>
         list.id === activeListId
-          ? { ...list, tasks: list.tasks.filter(task => !selectedTasks.includes(task.id)) }
+          ? {
+              ...list,
+              tasks: list.tasks.filter(
+                task => !selectedTasks.includes(task.id)
+              ),
+            }
           : list
       )
     );
@@ -444,7 +449,8 @@ function App() {
                     className="batch-btn"
                     onClick={() => setShowBatchActions(!showBatchActions)}
                   >
-                    ☑️ 批量操作 {selectedTasks.length > 0 && `(${selectedTasks.length})`}
+                    ☑️ 批量操作{' '}
+                    {selectedTasks.length > 0 && `(${selectedTasks.length})`}
                   </button>
                 </div>
               )}
@@ -454,11 +460,19 @@ function App() {
             {showBatchActions && selectedTasks.length > 0 && (
               <div className="batch-panel">
                 <span>已选择 {selectedTasks.length} 个任务</span>
-                <button onClick={() => batchCompleteTasks(true)}>✅ 标记完成</button>
-                <button onClick={() => batchCompleteTasks(false)}>⭕ 取消完成</button>
-                <button onClick={batchDeleteTasks} className="delete-batch">🗑️ 批量删除</button>
+                <button onClick={() => batchCompleteTasks(true)}>
+                  ✅ 标记完成
+                </button>
+                <button onClick={() => batchCompleteTasks(false)}>
+                  ⭕ 取消完成
+                </button>
+                <button onClick={batchDeleteTasks} className="delete-batch">
+                  🗑️ 批量删除
+                </button>
                 <button onClick={toggleSelectAll}>
-                  {selectedTasks.length === filteredTasks.length ? '☑️ 取消全选' : '✅ 全选'}
+                  {selectedTasks.length === filteredTasks.length
+                    ? '☑️ 取消全选'
+                    : '✅ 全选'}
                 </button>
               </div>
             )}
@@ -658,7 +672,9 @@ export default App;
 // 任务编辑表单组件
 function TaskEditForm({ task, onSave, onCancel }) {
   const [title, setTitle] = useState(task.title || '');
-  const [dueDate, setDueDate] = useState(task.dueDate ? task.dueDate.split('T')[0] : '');
+  const [dueDate, setDueDate] = useState(
+    task.dueDate ? task.dueDate.split('T')[0] : ''
+  );
   const [priority, setPriority] = useState(task.priority || 'medium');
 
   const handleSave = () => {
@@ -698,8 +714,12 @@ function TaskEditForm({ task, onSave, onCancel }) {
         </select>
       </div>
       <div className="task-edit-buttons">
-        <button className="save-btn" onClick={handleSave}>保存</button>
-        <button className="cancel-btn" onClick={onCancel}>取消</button>
+        <button className="save-btn" onClick={handleSave}>
+          保存
+        </button>
+        <button className="cancel-btn" onClick={onCancel}>
+          取消
+        </button>
       </div>
     </div>
   );
