@@ -629,3 +629,140 @@ body {
   padding: 10px 20px;
   border-radius: 8px;
 }
+
+/* 任务编辑样式 */
+.task-card.editing {
+  border: 2px solid #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.task-edit-form {
+  padding: 15px;
+}
+
+.task-edit-input input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.task-edit-options {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.task-edit-options select,
+.task-edit-options .date-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.task-edit-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.task-edit-buttons button {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.task-edit-buttons .save-btn {
+  background: #667eea;
+  color: white;
+}
+
+.task-edit-buttons .cancel-btn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.edit-btn:hover {
+  opacity: 1;
+}
+
+/* 工具栏和批量操作 */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+}
+
+.batch-actions {
+  flex-shrink: 0;
+}
+
+.batch-btn {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.batch-panel {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.batch-panel span {
+  font-size: 14px;
+  color: #666;
+}
+
+.batch-panel button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  background: #f0f0f0;
+  color: #333;
+}
+
+.batch-panel button.delete-batch {
+  background: #ff4757;
+  color: white;
+}
+
+.task-card.selected {
+  border: 2px solid #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.batch-checkbox {
+  margin-right: 8px;
+}
