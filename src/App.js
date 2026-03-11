@@ -62,6 +62,7 @@ function App() {
   const [editingTask, setEditingTask] = useState(null);
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [showBatchActions, setShowBatchActions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
@@ -296,6 +297,63 @@ function App() {
     );
   };
 
+  // 导出为 JSON
+  const exportToJSON = () => {
+    const data = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      lists: lists,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `robot-todo-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // 导入 JSON
+  const importFromJSON = file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.lists && Array.isArray(data.lists)) {
+          setLists(data.lists);
+          if (data.lists.length > 0) {
+            setActiveListId(data.lists[0].id);
+          }
+          alert('导入成功！');
+        } else {
+          alert('无效的备份文件格式');
+        }
+      } catch (error) {
+        alert('导入失败：请确保选择的是正确的 JSON 文件');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // 导出为 CSV
+  const exportToCSV = () => {
+    let csv = '清单,任务,完成状态,优先级,截止日期\n';
+    lists.forEach(list => {
+      list.tasks.forEach(task => {
+        csv += `"${list.name}","${task.title}",${task.completed ? '是' : '否'},${task.priority},${task.dueDate || ''}\n`;
+      });
+    });
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `robot-todo-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // 获取当前主题
   const currentTheme =
     THEMES.find(t => t.id === activeList.themeId) || THEMES[0];
@@ -384,6 +442,48 @@ function App() {
             >
               + 新建清单
             </button>
+          )}
+
+          {/* 设置按钮 */}
+          <button
+            className="settings-btn"
+            onClick={() => setShowSettings(true)}
+          >
+            ⚙️ 设置
+          </button>
+
+          {/* 设置面板 */}
+          {showSettings && (
+            <div className="settings-panel">
+              <h3>⚙️ 设置</h3>
+              <div className="settings-section">
+                <h4>📤 数据导出</h4>
+                <button onClick={exportToJSON}>导出为 JSON</button>
+                <button onClick={exportToCSV}>导出为 CSV</button>
+              </div>
+              <div className="settings-section">
+                <h4>📥 数据导入</h4>
+                <label className="import-btn">
+                  从 JSON 导入
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={e => {
+                      if (e.target.files[0]) {
+                        importFromJSON(e.target.files[0]);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+              <button
+                className="close-settings"
+                onClick={() => setShowSettings(false)}
+              >
+                关闭
+              </button>
+            </div>
           )}
         </aside>
 
