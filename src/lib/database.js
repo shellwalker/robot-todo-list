@@ -3,7 +3,7 @@
  * 提供与 Supabase 数据库的 CRUD 操作
  */
 
-import { supabase, generateId } from './supabase';
+import { supabase } from './supabase';
 
 // =============================================
 // 清单操作 (Lists)
@@ -353,7 +353,7 @@ export const migrateFromLocalStorage = async () => {
   }
 };
 
-export default {
+const databaseExports = {
   // Lists
   getLists,
   createList,
@@ -378,3 +378,5 @@ export default {
   // Migration
   migrateFromLocalStorage,
 };
+
+export default databaseExports;
