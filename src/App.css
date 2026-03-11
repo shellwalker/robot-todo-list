@@ -1034,3 +1034,17 @@ body {
   background: white;
   font-size: 13px;
 }
+
+/* 拖拽样式 */
+.task-card[draggable='true'] {
+  cursor: grab;
+}
+
+.task-card[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.task-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
