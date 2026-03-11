@@ -868,3 +868,10 @@ body {
 .close-settings:hover {
   background: #d0d0d0 !important;
 }
+
+/* 通知状态 */
+.notification-status {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
