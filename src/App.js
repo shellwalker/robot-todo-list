@@ -67,6 +67,16 @@ function App() {
   const [notificationPermission, setNotificationPermission] = useState(() =>
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
+  const [tags, setTags] = useState(() => {
+    const saved = localStorage.getItem('robot-todo-tags');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'work', name: '工作', color: '#e74c3c' },
+      { id: 'personal', name: '个人', color: '#3498db' },
+      { id: 'important', name: '重要', color: '#f39c12' },
+    ];
+  });
+  const [selectedTag, setSelectedTag] = useState(null);
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
@@ -75,10 +85,70 @@ function App() {
     localStorage.setItem('robot-todo-lists', JSON.stringify(lists));
   }, [lists]);
 
+  // 持久化标签
+  useEffect(() => {
+    localStorage.setItem('robot-todo-tags', JSON.stringify(tags));
+  }, [tags]);
+
+  // 添加标签
+  const addTag = (name, color) => {
+    const newTag = {
+      id: Date.now().toString(),
+      name,
+      color,
+    };
+    setTags([...tags, newTag]);
+  };
+
+  // 删除标签
+  const deleteTag = tagId => {
+    setTags(tags.filter(t => t.id !== tagId));
+    // 从所有任务中移除该标签
+    setLists(
+      lists.map(list => ({
+        ...list,
+        tasks: list.tasks.map(task => ({
+          ...task,
+          tags: task.tags?.filter(t => t !== tagId) || [],
+        })),
+      }))
+    );
+    if (selectedTag === tagId) {
+      setSelectedTag(null);
+    }
+  };
+
+  // 为任务添加/移除标签
+  const toggleTaskTag = (taskId, tagId) => {
+    setLists(
+      lists.map(list =>
+        list.id === activeListId
+          ? {
+              ...list,
+              tasks: list.tasks.map(task =>
+                task.id === taskId
+                  ? {
+                      ...task,
+                      tags: task.tags?.includes(tagId)
+                        ? task.tags.filter(t => t !== tagId)
+                        : [...(task.tags || []), tagId],
+                    }
+                  : task
+              ),
+            }
+          : list
+      )
+    );
+  };
+
   // 筛选任务
   const filteredTasks = activeList.tasks.filter(task => {
     if (searchQuery) {
       return task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    // 按标签筛选
+    if (selectedTag) {
+      return task.tags?.includes(selectedTag);
     }
     return true;
   });
@@ -580,6 +650,22 @@ function App() {
                 )}
               </div>
               <div className="settings-section">
+                <h4>🏷️ 标签管理</h4>
+                <div className="tags-list">
+                  {tags.map(tag => (
+                    <span
+                      key={tag.id}
+                      className="tag-item"
+                      style={{ backgroundColor: tag.color }}
+                    >
+                      {tag.name}
+                      <button onClick={() => deleteTag(tag.id)}>×</button>
+                    </span>
+                  ))}
+                </div>
+                <TagForm onAdd={addTag} />
+              </div>
+              <div className="settings-section">
                 <h4>📤 数据导出</h4>
                 <button onClick={exportToJSON}>导出为 JSON</button>
                 <button onClick={exportToCSV}>导出为 CSV</button>
@@ -760,6 +846,22 @@ function App() {
                               ✓ {completedSteps}/{totalSteps}
                             </span>
                           )}
+                          {task.tags && task.tags.length > 0 && (
+                            <div className="task-tags">
+                              {task.tags.map(tagId => {
+                                const tag = tags.find(t => t.id === tagId);
+                                return tag ? (
+                                  <span
+                                    key={tagId}
+                                    className="task-tag"
+                                    style={{ backgroundColor: tag.color }}
+                                  >
+                                    {tag.name}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -893,12 +995,13 @@ function AddStepForm({ onAdd }) {
 export default App;
 
 // 任务编辑表单组件
-function TaskEditForm({ task, onSave, onCancel }) {
+function TaskEditForm({ task, onSave, onCancel, tags, toggleTaskTag }) {
   const [title, setTitle] = useState(task.title || '');
   const [dueDate, setDueDate] = useState(
     task.dueDate ? task.dueDate.split('T')[0] : ''
   );
   const [priority, setPriority] = useState(task.priority || 'medium');
+  const [taskTags, setTaskTags] = useState(task.tags || []);
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -906,7 +1009,14 @@ function TaskEditForm({ task, onSave, onCancel }) {
       title: title.trim(),
       dueDate: dueDate || null,
       priority,
+      tags: taskTags,
     });
+  };
+
+  const handleTagToggle = tagId => {
+    setTaskTags(prev =>
+      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+    );
   };
 
   return (
@@ -936,6 +1046,25 @@ function TaskEditForm({ task, onSave, onCancel }) {
           ))}
         </select>
       </div>
+      {tags.length > 0 && (
+        <div className="task-edit-tags">
+          <span className="tags-label">标签:</span>
+          {tags.map(tag => (
+            <button
+              key={tag.id}
+              className={`tag-option ${taskTags.includes(tag.id) ? 'active' : ''}`}
+              style={{
+                backgroundColor: taskTags.includes(tag.id)
+                  ? tag.color
+                  : '#e0e0e0',
+              }}
+              onClick={() => handleTagToggle(tag.id)}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="task-edit-buttons">
         <button className="save-btn" onClick={handleSave}>
           保存
@@ -943,6 +1072,65 @@ function TaskEditForm({ task, onSave, onCancel }) {
         <button className="cancel-btn" onClick={onCancel}>
           取消
         </button>
+      </div>
+    </div>
+  );
+}
+
+// 标签表单组件
+function TagForm({ onAdd }) {
+  const [name, setName] = useState('');
+  const [color, setColor] = useState('#667eea');
+  const [showForm, setShowForm] = useState(false);
+
+  const colors = [
+    '#e74c3c',
+    '#3498db',
+    '#2ecc71',
+    '#f39c12',
+    '#9b59b6',
+    '#1abc9c',
+    '#e67e22',
+    '#34495e',
+  ];
+
+  const handleSubmit = () => {
+    if (!name.trim()) return;
+    onAdd(name.trim(), color);
+    setName('');
+    setColor('#667eea');
+    setShowForm(false);
+  };
+
+  if (!showForm) {
+    return (
+      <button className="add-tag-btn" onClick={() => setShowForm(true)}>
+        + 添加标签
+      </button>
+    );
+  }
+
+  return (
+    <div className="tag-form">
+      <input
+        type="text"
+        value={name}
+        onChange={e => setName(e.target.value)}
+        placeholder="标签名称"
+      />
+      <div className="color-picker">
+        {colors.map(c => (
+          <button
+            key={c}
+            className={`color-option ${color === c ? 'active' : ''}`}
+            style={{ backgroundColor: c }}
+            onClick={() => setColor(c)}
+          />
+        ))}
+      </div>
+      <div className="tag-form-buttons">
+        <button onClick={handleSubmit}>添加</button>
+        <button onClick={() => setShowForm(false)}>取消</button>
       </div>
     </div>
   );
