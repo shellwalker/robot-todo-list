@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/robot-todo-list/static/css/main.29c7b261.css",
-    "main.js": "/robot-todo-list/static/js/main.cb070e16.js",
+    "main.css": "/robot-todo-list/static/css/main.0e4035d0.css",
+    "main.js": "/robot-todo-list/static/js/main.591d7245.js",
     "static/js/488.f55e32be.chunk.js": "/robot-todo-list/static/js/488.f55e32be.chunk.js",
     "index.html": "/robot-todo-list/index.html",
-    "main.29c7b261.css.map": "/robot-todo-list/static/css/main.29c7b261.css.map",
-    "main.cb070e16.js.map": "/robot-todo-list/static/js/main.cb070e16.js.map",
+    "main.0e4035d0.css.map": "/robot-todo-list/static/css/main.0e4035d0.css.map",
+    "main.591d7245.js.map": "/robot-todo-list/static/js/main.591d7245.js.map",
     "488.f55e32be.chunk.js.map": "/robot-todo-list/static/js/488.f55e32be.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.29c7b261.css",
-    "static/js/main.cb070e16.js"
+    "static/css/main.0e4035d0.css",
+    "static/js/main.591d7245.js"
   ]
 }
