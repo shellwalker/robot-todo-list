@@ -1,22 +1,32 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Mock Supabase
-jest.mock('./lib/supabase', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn(() => Promise.resolve({ data: [{ id: '1', name: '我的任务', theme_id: 'purple' }], error: null })),
-    })),
-  })),
+// Mock useSupabase hook
+jest.mock('./hooks/useSupabase', () => ({
+  __esModule: true,
+  default: () => ({
+    lists: [{ id: '1', name: '我的任务', theme_id: 'purple', tasks: [] }],
+    activeListId: '1',
+    setActiveListId: jest.fn(),
+    activeList: { id: '1', name: '我的任务', theme_id: 'purple', tasks: [] },
+    activeTasks: [],
+    loading: false,
+    error: null,
+    addList: jest.fn(),
+    deleteList: jest.fn(),
+    updateListTheme: jest.fn(),
+    addTask: jest.fn(),
+    toggleTask: jest.fn(),
+    deleteTask: jest.fn(),
+    addStep: jest.fn(),
+    toggleStep: jest.fn(),
+  }),
 }));
 
 import App from './App';
 
-test('renders app with default list', async () => {
+test('renders app with default list', () => {
   render(<App />);
-  
-  // 等待数据加载完成
-  await waitFor(() => {
-    expect(screen.getByText(/我的任务/i)).toBeInTheDocument();
-  });
+  // 验证标题显示
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/我的任务/i);
 });
