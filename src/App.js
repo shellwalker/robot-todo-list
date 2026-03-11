@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
+import useSupabase from './hooks/useSupabase';
 
 // 预设主题
 const THEMES = [
@@ -18,33 +19,34 @@ const PRIORITIES = [
 ];
 
 function App() {
-  // 数据结构：多个清单
-  const [lists, setLists] = useState(() => {
-    const saved = localStorage.getItem('robot-todo-lists');
-    if (saved) return JSON.parse(saved);
-    // 默认创建一个"我的任务"清单
-    return [{
-      id: 'default',
-      name: '我的任务',
-      tasks: [],
-      themeId: 'purple'
-    }];
-  });
+  // 使用 Supabase Hook
+  const {
+    lists,
+    activeListId,
+    setActiveListId,
+    activeList,
+    activeTasks,
+    loading,
+    error,
+    addList,
+    deleteList,
+    updateListTheme,
+    addTask,
+    toggleTask,
+    deleteTask,
+    addStep,
+    toggleStep,
+  } = useSupabase();
 
-  const [activeListId, setActiveListId] = useState(() => lists[0]?.id || 'default');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddList, setShowAddList] = useState(false);
   const [newListName, setNewListName] = useState('');
 
-  const activeList = lists.find(l => l.id === activeListId) || lists[0];
-
-  // 持久化
-  useEffect(() => {
-    localStorage.setItem('robot-todo-lists', JSON.stringify(lists));
-  }, [lists]);
+  // 获取当前主题
+  const currentTheme = THEMES.find(t => t.id === (activeList?.theme_id || 'purple')) || THEMES[0];
 
   // 筛选任务
-  const filteredTasks = activeList.tasks.filter(task => {
+  const filteredTasks = (activeTasks || []).filter(task => {
     if (searchQuery) {
       return task.title.toLowerCase().includes(searchQuery.toLowerCase());
     }
@@ -52,119 +54,10 @@ function App() {
   });
 
   // 计算进度
-  const completedCount = activeList.tasks.filter(t => t.completed).length;
-  const progress = activeList.tasks.length > 0 ? (completedCount / activeList.tasks.length) * 100 : 0;
-
-  // 添加清单
-  const addList = () => {
-    if (!newListName.trim()) return;
-    const newList = {
-      id: Date.now().toString(),
-      name: newListName.trim(),
-      tasks: [],
-      themeId: 'purple'
-    };
-    setLists([...lists, newList]);
-    setActiveListId(newList.id);
-    setNewListName('');
-    setShowAddList(false);
-  };
-
-  // 删除清单
-  const deleteList = (listId) => {
-    if (lists.length <= 1) return; // 至少保留一个清单
-    const newLists = lists.filter(l => l.id !== listId);
-    setLists(newLists);
-    if (activeListId === listId) {
-      setActiveListId(newLists[0].id);
-    }
-  };
-
-  // 添加任务
-  const addTask = (title, dueDate, priority) => {
-    if (!title.trim()) return;
-    const newTask = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      completed: false,
-      dueDate: dueDate || null,
-      priority: priority || 'medium',
-      steps: [],
-      createdAt: new Date().toISOString()
-    };
-    setLists(lists.map(list =>
-      list.id === activeListId
-        ? { ...list, tasks: [...list.tasks, newTask] }
-        : list
-    ));
-  };
-
-  // 切换任务完成状态
-  const toggleTask = (taskId) => {
-    setLists(lists.map(list =>
-      list.id === activeListId
-        ? {
-            ...list,
-            tasks: list.tasks.map(task =>
-              task.id === taskId ? { ...task, completed: !task.completed } : task
-            )
-          }
-        : list
-    ));
-  };
-
-  // 删除任务
-  const deleteTask = (taskId) => {
-    setLists(lists.map(list =>
-      list.id === activeListId
-        ? { ...list, tasks: list.tasks.filter(task => task.id !== taskId) }
-        : list
-    ));
-  };
-
-  // 切换步骤完成状态
-  const toggleStep = (taskId, stepId) => {
-    setLists(lists.map(list =>
-      list.id === activeListId
-        ? {
-            ...list,
-            tasks: list.tasks.map(task =>
-              task.id === taskId
-                ? {
-                    ...task,
-                    steps: task.steps.map(step =>
-                      step.id === stepId ? { ...step, completed: !step.completed } : step
-                    )
-                  }
-                : task
-            )
-          }
-        : list
-    ));
-  };
-
-  // 添加步骤
-  const addStep = (taskId, stepTitle) => {
-    if (!stepTitle.trim()) return;
-    setLists(lists.map(list =>
-      list.id === activeListId
-        ? {
-            ...list,
-            tasks: list.tasks.map(task =>
-              task.id === taskId
-                ? {
-                    ...task,
-                    steps: [...task.steps, { id: Date.now().toString(), title: stepTitle.trim(), completed: false }]
-                  }
-                : task
-            )
-          }
-        : list
-    ));
-  };
-
-  // 获取当前主题
-  const currentTheme = THEMES.find(t => t.id === activeList.themeId) || THEMES[0];
+  const completedCount = (activeTasks || []).filter(t => t.completed).length;
+  const progress = (activeTasks || []).length > 0 
+    ? (completedCount / (activeTasks || []).length) * 100 
+    : 0;
 
   // 获取优先级信息
   const getPriorityInfo = (priorityId) => PRIORITIES.find(p => p.id === priorityId) || PRIORITIES[1];
@@ -188,6 +81,44 @@ function App() {
     return new Date(dateStr) < new Date() && !new Date(dateStr).toDateString().includes(new Date().toDateString());
   };
 
+  // 处理添加清单
+  const handleAddList = async () => {
+    if (!newListName.trim()) return;
+    await addList(newListName.trim());
+    setNewListName('');
+    setShowAddList(false);
+  };
+
+  // 处理删除清单
+  const handleDeleteList = async (listId) => {
+    if (lists.length <= 1) return;
+    await deleteList(listId);
+  };
+
+  // 加载状态
+  if (loading) {
+    return (
+      <div className="App" style={{ background: THEMES[0].bg }}>
+        <div className="loading-screen">
+          <div className="loading-spinner">📋</div>
+          <p>正在加载数据...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="App" style={{ background: THEMES[0].bg }}>
+        <div className="error-screen">
+          <p>⚠️ 加载数据失败</p>
+          <p className="error-message">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="App" style={{ background: currentTheme.bg }}>
       <div className="app-container">
@@ -198,7 +129,7 @@ function App() {
           </div>
 
           <div className="lists-container">
-            {lists.map(list => (
+            {(lists || []).map(list => (
               <div
                 key={list.id}
                 className={`list-item ${activeListId === list.id ? 'active' : ''}`}
@@ -206,11 +137,11 @@ function App() {
               >
                 <span className="list-icon">📋</span>
                 <span className="list-name">{list.name}</span>
-                <span className="list-count">{list.tasks.filter(t => !t.completed).length}</span>
+                <span className="list-count">{(list.tasks || []).filter(t => !t.completed).length}</span>
                 {lists.length > 1 && (
                   <button
                     className="delete-list-btn"
-                    onClick={(e) => { e.stopPropagation(); deleteList(list.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteList(list.id); }}
                   >
                     ×
                   </button>
@@ -227,10 +158,10 @@ function App() {
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="清单名称"
                 autoFocus
-                onKeyPress={(e) => e.key === 'Enter' && addList()}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddList()}
               />
               <div className="add-list-buttons">
-                <button onClick={addList}>添加</button>
+                <button onClick={handleAddList}>添加</button>
                 <button onClick={() => setShowAddList(false)}>取消</button>
               </div>
             </div>
@@ -246,18 +177,14 @@ function App() {
           {/* 头部 */}
           <header className="content-header">
             <div className="header-top">
-              <h1>{activeList.name}</h1>
+              <h1>{activeList?.name || '我的任务'}</h1>
               <div className="theme-selector">
                 {THEMES.map(theme => (
                   <button
                     key={theme.id}
                     className={`theme-btn ${currentTheme.id === theme.id ? 'active' : ''}`}
                     style={{ background: theme.bg.includes('#2c3e50') ? '#555' : undefined }}
-                    onClick={() => {
-                      setLists(lists.map(l =>
-                        l.id === activeListId ? { ...l, themeId: theme.id } : l
-                      ));
-                    }}
+                    onClick={() => activeList && updateListTheme(activeList.id, theme.id)}
                     title={theme.name}
                   />
                 ))}
@@ -265,12 +192,12 @@ function App() {
             </div>
 
             {/* 进度条 */}
-            {activeList.tasks.length > 0 && (
+            {(activeTasks || []).length > 0 && (
               <div className="progress-section">
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
                 </div>
-                <span className="progress-text">{completedCount}/{activeList.tasks.length} 已完成</span>
+                <span className="progress-text">{completedCount}/{(activeTasks || []).length} 已完成</span>
               </div>
             )}
 
@@ -303,7 +230,7 @@ function App() {
                       <label className="checkbox-container">
                         <input
                           type="checkbox"
-                          checked={task.completed}
+                          checked={task.completed || false}
                           onChange={() => toggleTask(task.id)}
                         />
                         <span className="checkmark"></span>
@@ -312,9 +239,9 @@ function App() {
                       <div className="task-content">
                         <span className="task-title">{task.title}</span>
                         <div className="task-meta">
-                          {task.dueDate && (
-                            <span className={`due-date ${isOverdue(task.dueDate) && !task.completed ? 'overdue' : ''}`}>
-                              📅 {formatDate(task.dueDate)}
+                          {task.due_date && (
+                            <span className={`due-date ${isOverdue(task.due_date) && !task.completed ? 'overdue' : ''}`}>
+                              📅 {formatDate(task.due_date)}
                             </span>
                           )}
                           <span className="priority-badge" style={{ color: priorityInfo.color }}>
@@ -338,7 +265,7 @@ function App() {
                           <label key={step.id} className="step-item">
                             <input
                               type="checkbox"
-                              checked={step.completed}
+                              checked={step.completed || false}
                               onChange={() => toggleStep(task.id, step.id)}
                             />
                             <span className={step.completed ? 'completed' : ''}>{step.title}</span>
@@ -369,9 +296,9 @@ function AddTaskForm({ onAdd }) {
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('medium');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) return;
-    onAdd(title, dueDate, priority);
+    await onAdd(title, dueDate, priority);
     setTitle('');
     setDueDate('');
     setPriority('medium');
@@ -411,9 +338,9 @@ function AddStepForm({ onAdd }) {
   const [showInput, setShowInput] = useState(false);
   const [stepTitle, setStepTitle] = useState('');
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!stepTitle.trim()) return;
-    onAdd(stepTitle);
+    await onAdd(stepTitle);
     setStepTitle('');
     setShowInput(false);
   };
