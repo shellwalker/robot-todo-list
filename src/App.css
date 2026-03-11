@@ -1020,3 +1020,17 @@ body {
 .tag-option.active {
   box-shadow: 0 0 0 2px #333;
 }
+
+/* 重复任务样式 */
+.recurrence-badge {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.recurrence-select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+}
