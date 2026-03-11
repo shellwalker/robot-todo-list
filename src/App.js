@@ -323,6 +323,17 @@ function App() {
       ? (completedCount / activeList.tasks.length) * 100
       : 0;
 
+  // 计算统计
+  const allTasks = lists.flatMap(l => l.tasks);
+  const totalTasks = allTasks.length;
+  const totalCompleted = allTasks.filter(t => t.completed).length;
+  const overdueTasks = allTasks.filter(
+    t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+  ).length;
+  const highPriorityTasks = allTasks.filter(
+    t => !t.completed && t.priority === 'high'
+  ).length;
+
   // 添加清单
   const addList = () => {
     if (!newListName.trim()) return;
@@ -794,6 +805,40 @@ function App() {
           {showSettings && (
             <div className="settings-panel">
               <h3>⚙️ 设置</h3>
+
+              {/* 统计信息 */}
+              <div className="settings-section">
+                <h4>📊 任务统计</h4>
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <span className="stat-value">{lists.length}</span>
+                    <span className="stat-label">清单</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value">{totalTasks}</span>
+                    <span className="stat-label">总任务</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value">{totalCompleted}</span>
+                    <span className="stat-label">已完成</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-value">
+                      {totalTasks - totalCompleted}
+                    </span>
+                    <span className="stat-label">待完成</span>
+                  </div>
+                  <div className="stat-item overdue">
+                    <span className="stat-value">{overdueTasks}</span>
+                    <span className="stat-label">已逾期</span>
+                  </div>
+                  <div className="stat-item high">
+                    <span className="stat-value">{highPriorityTasks}</span>
+                    <span className="stat-label">高优先级</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="settings-section">
                 <h4>🔔 通知设置</h4>
                 <p className="notification-status">
