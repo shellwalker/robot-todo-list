@@ -11,31 +11,11 @@
   ],
   "routes": [
     {
-      "src": "/robot-todo-list/static/(.*)",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/robot-todo-list/manifest.json",
-      "dest": "/robot-todo-list/manifest.json"
-    },
-    {
-      "src": "/robot-todo-list/favicon.ico",
-      "dest": "/robot-todo-list/favicon.ico"
-    },
-    {
-      "src": "/robot-todo-list/logo192.png",
-      "dest": "/robot-todo-list/logo192.png"
-    },
-    {
-      "src": "/robot-todo-list/logo512.png",
-      "dest": "/robot-todo-list/logo512.png"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "regions": ["iad1"]
+  ]
 }
