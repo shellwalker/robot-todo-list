@@ -369,6 +369,7 @@ function App() {
       dueDate: dueDate || null,
       priority: priority || 'medium',
       recurrence: recurrence || null,
+      dependsOn: [],
       steps: [],
       createdAt: new Date().toISOString(),
     };
@@ -381,8 +382,37 @@ function App() {
     );
   };
 
+  // 检查任务是否被依赖锁定
+  const isTaskLocked = taskId => {
+    let locked = false;
+    lists.forEach(list => {
+      list.tasks.forEach(task => {
+        if (task.dependsOn?.includes(taskId)) {
+          const dependencyTask = list.tasks.find(t => t.id === taskId);
+          if (dependencyTask && !dependencyTask.completed) {
+            locked = true;
+          }
+        }
+      });
+    });
+    return locked;
+  };
+
   // 切换任务完成状态
   const toggleTask = taskId => {
+    // 检查是否有未完成的依赖任务
+    const task = activeList.tasks.find(t => t.id === taskId);
+    if (task?.dependsOn?.length > 0) {
+      const incompleteDeps = task.dependsOn.filter(depId => {
+        const depTask = activeList.tasks.find(t => t.id === depId);
+        return depTask && !depTask.completed;
+      });
+      if (incompleteDeps.length > 0) {
+        alert('请先完成依赖的任务！');
+        return;
+      }
+    }
+
     setLists(
       lists.map(list =>
         list.id === activeListId
@@ -1085,6 +1115,14 @@ function App() {
                               title={`重复: ${RECURRENCE_OPTIONS.find(r => r.id === task.recurrence)?.name || task.recurrence}`}
                             >
                               🔄
+                            </span>
+                          )}
+                          {task.dependsOn && task.dependsOn.length > 0 && (
+                            <span
+                              className="dependency-badge"
+                              title="有依赖任务"
+                            >
+                              🔗
                             </span>
                           )}
                           {totalSteps > 0 && (
