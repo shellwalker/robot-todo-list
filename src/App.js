@@ -59,6 +59,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddList, setShowAddList] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [editingTask, setEditingTask] = useState(null);
+  const [selectedTasks, setSelectedTasks] = useState([]);
+  const [showBatchActions, setShowBatchActions] = useState(false);
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
@@ -155,6 +158,88 @@ function App() {
           : list
       )
     );
+    setSelectedTasks(prev => prev.filter(id => id !== taskId));
+  };
+
+  // 批量删除任务
+  const batchDeleteTasks = () => {
+    setLists(
+      lists.map(list =>
+        list.id === activeListId
+          ? {
+              ...list,
+              tasks: list.tasks.filter(
+                task => !selectedTasks.includes(task.id)
+              ),
+            }
+          : list
+      )
+    );
+    setSelectedTasks([]);
+    setShowBatchActions(false);
+  };
+
+  // 批量完成任务
+  const batchCompleteTasks = completed => {
+    setLists(
+      lists.map(list =>
+        list.id === activeListId
+          ? {
+              ...list,
+              tasks: list.tasks.map(task =>
+                selectedTasks.includes(task.id) ? { ...task, completed } : task
+              ),
+            }
+          : list
+      )
+    );
+    setSelectedTasks([]);
+    setShowBatchActions(false);
+  };
+
+  // 切换任务选择
+  const toggleTaskSelect = taskId => {
+    setSelectedTasks(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedTasks.length === filteredTasks.length) {
+      setSelectedTasks([]);
+    } else {
+      setSelectedTasks(filteredTasks.map(task => task.id));
+    }
+  };
+
+  // 更新任务
+  const updateTask = (taskId, updates) => {
+    setLists(
+      lists.map(list =>
+        list.id === activeListId
+          ? {
+              ...list,
+              tasks: list.tasks.map(task =>
+                task.id === taskId ? { ...task, ...updates } : task
+              ),
+            }
+          : list
+      )
+    );
+    setEditingTask(null);
+  };
+
+  // 开始编辑任务
+  const startEditTask = task => {
+    setEditingTask(task);
+  };
+
+  // 取消编辑
+  const cancelEditTask = () => {
+    setEditingTask(null);
   };
 
   // 切换步骤完成状态
@@ -349,14 +434,48 @@ function App() {
             )}
 
             {/* 搜索 */}
-            <div className="search-box">
-              <input
-                type="text"
-                placeholder="🔍 搜索任务..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
+            <div className="toolbar">
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="🔍 搜索任务..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              {filteredTasks.length > 0 && (
+                <div className="batch-actions">
+                  <button
+                    className="batch-btn"
+                    onClick={() => setShowBatchActions(!showBatchActions)}
+                  >
+                    ☑️ 批量操作{' '}
+                    {selectedTasks.length > 0 && `(${selectedTasks.length})`}
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* 批量操作面板 */}
+            {showBatchActions && selectedTasks.length > 0 && (
+              <div className="batch-panel">
+                <span>已选择 {selectedTasks.length} 个任务</span>
+                <button onClick={() => batchCompleteTasks(true)}>
+                  ✅ 标记完成
+                </button>
+                <button onClick={() => batchCompleteTasks(false)}>
+                  ⭕ 取消完成
+                </button>
+                <button onClick={batchDeleteTasks} className="delete-batch">
+                  🗑️ 批量删除
+                </button>
+                <button onClick={toggleSelectAll}>
+                  {selectedTasks.length === filteredTasks.length
+                    ? '☑️ 取消全选'
+                    : '✅ 全选'}
+                </button>
+              </div>
+            )}
           </header>
 
           {/* 任务列表 */}
@@ -377,9 +496,17 @@ function App() {
                 return (
                   <div
                     key={task.id}
-                    className={`task-card ${task.completed ? 'completed' : ''}`}
+                    className={`task-card ${task.completed ? 'completed' : ''} ${selectedTasks.includes(task.id) ? 'selected' : ''}`}
                   >
                     <div className="task-header">
+                      <label className="checkbox-container batch-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={selectedTasks.includes(task.id)}
+                          onChange={() => toggleTaskSelect(task.id)}
+                        />
+                        <span className="checkmark"></span>
+                      </label>
                       <label className="checkbox-container">
                         <input
                           type="checkbox"
@@ -541,3 +668,59 @@ function AddStepForm({ onAdd }) {
 }
 
 export default App;
+
+// 任务编辑表单组件
+function TaskEditForm({ task, onSave, onCancel }) {
+  const [title, setTitle] = useState(task.title || '');
+  const [dueDate, setDueDate] = useState(
+    task.dueDate ? task.dueDate.split('T')[0] : ''
+  );
+  const [priority, setPriority] = useState(task.priority || 'medium');
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+    onSave({
+      title: title.trim(),
+      dueDate: dueDate || null,
+      priority,
+    });
+  };
+
+  return (
+    <div className="task-edit-form">
+      <div className="task-edit-input">
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="任务标题"
+          autoFocus
+          onKeyPress={e => e.key === 'Enter' && handleSave()}
+        />
+      </div>
+      <div className="task-edit-options">
+        <input
+          type="date"
+          value={dueDate}
+          onChange={e => setDueDate(e.target.value)}
+          className="date-input"
+        />
+        <select value={priority} onChange={e => setPriority(e.target.value)}>
+          {PRIORITIES.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.icon} {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="task-edit-buttons">
+        <button className="save-btn" onClick={handleSave}>
+          保存
+        </button>
+        <button className="cancel-btn" onClick={onCancel}>
+          取消
+        </button>
+      </div>
+    </div>
+  );
+}
