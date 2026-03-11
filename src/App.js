@@ -149,6 +149,34 @@ function App() {
   // 初始化时检查重复任务
   useEffect(() => {
     checkRecurringTasks();
+
+    // 检查分享链接
+    const params = new URLSearchParams(window.location.search);
+    const shareData = params.get('share');
+    if (shareData) {
+      try {
+        const decoded = decodeURIComponent(atob(shareData));
+        const sharedList = JSON.parse(decoded);
+        if (sharedList && sharedList.list) {
+          const newList = {
+            ...sharedList.list,
+            id: Date.now().toString(),
+            name: sharedList.list.name + ' (分享)',
+          };
+          setLists([...lists, newList]);
+          setActiveListId(newList.id);
+          // 清除 URL 参数
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+          );
+          alert('已成功导入分享的清单！');
+        }
+      } catch (e) {
+        console.error('导入分享失败:', e);
+      }
+    }
   }, []);
 
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
@@ -945,6 +973,32 @@ function App() {
                     <span>关闭弹窗</span>
                   </div>
                 </div>
+              </div>
+              <div className="settings-section">
+                <h4>🔗 分享清单</h4>
+                <p className="share-desc">生成当前清单的分享链接</p>
+                <button
+                  onClick={() => {
+                    const shareData = {
+                      list: activeList,
+                      tasks: activeList.tasks,
+                    };
+                    const encoded = btoa(
+                      encodeURIComponent(JSON.stringify(shareData))
+                    );
+                    const shareUrl = `${window.location.origin}/robot-todo-list/?share=${encoded}`;
+                    navigator.clipboard
+                      .writeText(shareUrl)
+                      .then(() => {
+                        alert('分享链接已复制到剪贴板！');
+                      })
+                      .catch(() => {
+                        prompt('分享链接:', shareUrl);
+                      });
+                  }}
+                >
+                  生成分享链接
+                </button>
               </div>
               <button
                 className="close-settings"
