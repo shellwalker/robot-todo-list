@@ -78,6 +78,79 @@ function App() {
   });
   const [selectedTag, setSelectedTag] = useState(null);
 
+  // 重复频率配置
+  const RECURRENCE_OPTIONS = [
+    { id: 'daily', name: '每天', icon: '🔄' },
+    { id: 'weekly', name: '每周', icon: '📅' },
+    { id: 'monthly', name: '每月', icon: '🗓️' },
+    { id: 'weekdays', name: '工作日', icon: '💼' },
+  ];
+
+  // 计算下次到期日期
+  const getNextDueDate = (currentDueDate, recurrence) => {
+    if (!currentDueDate) return null;
+    const date = new Date(currentDueDate);
+
+    switch (recurrence) {
+      case 'daily':
+        date.setDate(date.getDate() + 1);
+        break;
+      case 'weekly':
+        date.setDate(date.getDate() + 7);
+        break;
+      case 'monthly':
+        date.setMonth(date.getMonth() + 1);
+        break;
+      case 'weekdays':
+        do {
+          date.setDate(date.getDate() + 1);
+        } while (date.getDay() === 0 || date.getDay() === 6);
+        break;
+      default:
+        return null;
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  // 检查并创建重复任务
+  const checkRecurringTasks = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const newTasks = [];
+    const updatedLists = lists.map(list => {
+      const tasks = list.tasks.map(task => {
+        if (task.recurrence && !task.completed && task.dueDate) {
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+
+          if (dueDate < today) {
+            // 创建新任务
+            const newTask = {
+              ...task,
+              id: Date.now().toString() + Math.random(),
+              dueDate: getNextDueDate(task.dueDate, task.recurrence),
+              completed: false,
+            };
+            newTasks.push({ listId: list.id, task: newTask });
+            return task;
+          }
+        }
+        return task;
+      });
+      return { ...list, tasks };
+    });
+
+    if (newTasks.length > 0) {
+      setLists(updatedLists);
+    }
+  };
+
+  // 初始化时检查重复任务
+  useEffect(() => {
+    checkRecurringTasks();
+  }, []);
+
   const activeList = lists.find(l => l.id === activeListId) || lists[0];
 
   // 持久化
@@ -186,7 +259,7 @@ function App() {
   };
 
   // 添加任务
-  const addTask = (title, dueDate, priority) => {
+  const addTask = (title, dueDate, priority, recurrence = '') => {
     if (!title.trim()) return;
     const newTask = {
       id: Date.now().toString(),
@@ -194,6 +267,7 @@ function App() {
       completed: false,
       dueDate: dueDate || null,
       priority: priority || 'medium',
+      recurrence: recurrence || null,
       steps: [],
       createdAt: new Date().toISOString(),
     };
@@ -841,6 +915,14 @@ function App() {
                           >
                             {priorityInfo.icon} {priorityInfo.name}
                           </span>
+                          {task.recurrence && (
+                            <span
+                              className="recurrence-badge"
+                              title={`重复: ${RECURRENCE_OPTIONS.find(r => r.id === task.recurrence)?.name || task.recurrence}`}
+                            >
+                              🔄
+                            </span>
+                          )}
                           {totalSteps > 0 && (
                             <span className="steps-count">
                               ✓ {completedSteps}/{totalSteps}
@@ -902,7 +984,7 @@ function App() {
           </div>
 
           {/* 添加任务 */}
-          <AddTaskForm onAdd={addTask} />
+          <AddTaskForm onAdd={addTask} recurrenceOptions={RECURRENCE_OPTIONS} />
         </main>
       </div>
     </div>
@@ -910,17 +992,19 @@ function App() {
 }
 
 // 添加任务表单组件
-function AddTaskForm({ onAdd }) {
+function AddTaskForm({ onAdd, recurrenceOptions = [] }) {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('medium');
+  const [recurrence, setRecurrence] = useState('');
 
   const handleSubmit = () => {
     if (!title.trim()) return;
-    onAdd(title, dueDate, priority);
+    onAdd(title, dueDate, priority, recurrence);
     setTitle('');
     setDueDate('');
     setPriority('medium');
+    setRecurrence('');
   };
 
   return (
@@ -948,6 +1032,20 @@ function AddTaskForm({ onAdd }) {
             </option>
           ))}
         </select>
+        {recurrenceOptions.length > 0 && (
+          <select
+            value={recurrence}
+            onChange={e => setRecurrence(e.target.value)}
+            className="recurrence-select"
+          >
+            <option value="">不重复</option>
+            {recurrenceOptions.map(r => (
+              <option key={r.id} value={r.id}>
+                {r.icon} {r.name}
+              </option>
+            ))}
+          </select>
+        )}
         <button onClick={handleSubmit}>添加</button>
       </div>
     </div>
