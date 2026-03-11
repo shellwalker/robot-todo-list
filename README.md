@@ -1,70 +1,112 @@
-# Getting Started with Create React App
+# Robot Todo List 🦁
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+一个功能丰富的待办事项管理应用，支持多平台部署。
 
-## Available Scripts
+## ✨ 功能特性
 
-In the project directory, you can run:
+### 基础功能
+- ✅ 多清单管理
+- ✅ 任务增删改查
+- ✅ 任务完成状态切换
+- ✅ localStorage 持久化
 
-### `npm start`
+### 进阶功能
+- 🎯 任务优先级（低/中/高）
+- 📅 截止日期设置
+- 🔍 任务搜索筛选
+- 📝 子任务步骤管理
+- 🏷️ 标签系统
+- 🔄 重复任务（每天/每周/每月）
+- 🔗 任务依赖关系
+- 📊 任务统计
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### UI/UX
+- 🎨 5种主题切换（梦幻紫、海洋蓝、日落橙、森林绿、暗黑模式）
+- 📱 响应式设计（移动端优化）
+- ✨ 动画效果
+- 🌙 深色模式支持
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 高级功能
+- 📤 数据导出（JSON/CSV）
+- 📥 数据导入
+- 🔗 清单分享链接
+- 🔔 浏览器通知
+- ⌨️ 键盘快捷键
+- 📲 PWA 支持（可添加到主屏幕）
+- 🛡️ 错误边界
 
-### `npm test`
+## 🏗️ 技术架构
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+src/
+├── components/           # React 组件
+│   ├── common/        # 通用组件
+│   ├── layout/        # 布局组件
+│   └── tasks/        # 任务相关组件
+├── hooks/             # 自定义 Hooks
+├── lib/               # 工具库
+│   ├── supabase.js  # Supabase 客户端
+│   └── database.js  # 数据访问层
+└── App.js            # 主应用组件
+```
 
-### `npm run build`
+### 技术栈
+- **前端框架**: React 19
+- **后端**: Supabase (PostgreSQL)
+- **部署**: Vercel / GitHub Pages
+- **构建工具**: Create React App
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 快速开始
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 安装依赖
+```bash
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 开发模式
+```bash
+npm start
+```
 
-### `npm run eject`
+### 构建生产版本
+```bash
+npm run build
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🔧 环境变量
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+在 `.env.local` 中配置：
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```env
+REACT_APP_SUPABASE_URL=https://your-project.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 📋 键盘快捷键
 
-## Learn More
+| 快捷键 | 功能 |
+|--------|------|
+| Ctrl+N | 新建任务 |
+| Ctrl+F | 搜索 |
+| Ctrl+L | 新建清单 |
+| Esc | 关闭弹窗 |
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🌐 部署
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Vercel 部署
+1. 连接 GitHub 仓库到 Vercel
+2. 配置环境变量
+3. 自动部署
 
-### Code Splitting
+### GitHub Pages 部署
+```bash
+npm run deploy
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📄 许可证
 
-### Analyzing the Bundle Size
+MIT License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 👤 作者
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+shellwalker
