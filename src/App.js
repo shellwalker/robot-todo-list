@@ -163,6 +163,53 @@ function App() {
     localStorage.setItem('robot-todo-tags', JSON.stringify(tags));
   }, [tags]);
 
+  // 键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = e => {
+      // 忽略在输入框中的快捷键
+      if (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Ctrl/Cmd + N: 新建任务
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        document.querySelector('.add-task-input input')?.focus();
+      }
+
+      // Ctrl/Cmd + F: 搜索
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        document.querySelector('.search-box input')?.focus();
+      }
+
+      // Ctrl/Cmd + L: 新建清单
+      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        setShowAddList(true);
+      }
+
+      // Escape: 关闭弹窗
+      if (e.key === 'Escape') {
+        setShowAddList(false);
+        setShowSettings(false);
+        setEditingTask(null);
+      }
+
+      // 数字键 1-5: 切换优先级
+      if (['1', '2', '3', '4', '5'].includes(e.key)) {
+        // 可扩展：选择任务后按数字键设置优先级
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // 添加标签
   const addTag = (name, color) => {
     const newTag = {
@@ -802,6 +849,27 @@ function App() {
                     style={{ display: 'none' }}
                   />
                 </label>
+              </div>
+              <div className="settings-section">
+                <h4>⌨️ 键盘快捷键</h4>
+                <div className="shortcuts-list">
+                  <div className="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>N</kbd>
+                    <span>新建任务</span>
+                  </div>
+                  <div className="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>F</kbd>
+                    <span>搜索</span>
+                  </div>
+                  <div className="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>L</kbd>
+                    <span>新建清单</span>
+                  </div>
+                  <div className="shortcut-item">
+                    <kbd>Esc</kbd>
+                    <span>关闭弹窗</span>
+                  </div>
+                </div>
               </div>
               <button
                 className="close-settings"
